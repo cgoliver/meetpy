@@ -21,7 +21,7 @@ class Application:
         #meet data
         # self.dfcolumns = ['Name', 'Club', 'Event', 'Heat', 'Lane', 'Time', \ 
         # 'Position', 'Points']
-        self.dfcolumns = ['Name', 'Event', 'Heat', 'Lane', 'Time', \
+        self.dfcolumns = ['Name', 'Race', 'Swim', 'Lane', 'Time', \
             'Position', 'Points']
         self.data = pd.DataFrame(columns=self.dfcolumns)
         self.swimmers = list() 
@@ -31,6 +31,7 @@ class Application:
         self.times = list()
         self.current_event = 1
         self.current_heat = 1
+        self.current_race = 1
 
         #generate display
         master.title("meetpy")
@@ -54,16 +55,19 @@ class Application:
         self.next_button.grid(row=row, column=col+4)
 
         ## EVENT, HEAT TEXT BOXES
-        self.event_number = Entry(master)
-        self.event_number.grid(row=row, column=col+1)
+        # self.event_number = Entry(master)
+        # self.event_number.grid(row=row, column=col+1)
 
-        self.heat_number = Label(master, text="Heat:{0}".format(self.current_heat))
+        Label(master, text="Race:").grid(row=row, column=col+1)
+        self.race_label = StringVar()
+        self.race_label.set("1")
+        self.heat_number = Label(master, textvar=self.race_label)
         self.heat_number.grid(row=row, column=col+2)
 
         ## EVENT TYPE DROPDOWN
-        swim = StringVar(master)
-        swim.set("100 IM")
-        self.swim_type = OptionMenu(master,swim, "50 FR", "100 FR",\
+        self.swim = StringVar(master)
+        self.swim.set("100 IM")
+        self.swim_type = OptionMenu(master,self.swim, "50 FR", "100 FR",\
             "100 IM", "4x50 FR", "4x50 IM")
         self.swim_type.grid(row=1, column=col+3)
 
@@ -126,7 +130,7 @@ class Application:
         indices.sort(key=lambda x:times[x])
         positions = [0] * len(indices)
         for i,x in enumerate(indices):
-            positions[x] = i
+            positions[x] = int(i) + 1
         return positions
 
     def update_results(self):
@@ -134,30 +138,41 @@ class Application:
         heat_df = pd.DataFrame(columns=self.dfcolumns)
         heat_times = [t.get() for t in self.times]
         heat_positions = self.get_heat_positions(heat_times)
+        heat_names = [n.get() for n in self.names]
+        current_swim = [self.swim.get() for _ in range(len(self.names))]
 
-        heat_df['Name'] = [n.get() for n in self.names]
+        heat_df['Name'] = heat_names
+        heat_df['Race'] = [self.current_race for _ in range(len(self.names))]
         heat_df['Lane'] = [i+1 for i in range(len(heat_times))]
-        heat_df['Heat'] = [self.current_heat for _ in range(len(self.names))]
-        heat_df['Event'] = [self.current_event for _ in range(len(self.names))]
+        heat_df['Swim'] = current_swim
         heat_df['Time'] = heat_times
         heat_df['Position'] = heat_positions
 
         #if if current heat and event already in dataframe, update slice 
-        if ((self.data['Event'] == self.current_event) & (self.data['Heat'] == \
-                    self.current_heat)).any():
-            print(len(heat_times), len(heat_positions))
-            self.data.loc[(self.data.Event == self.current_event) &\
-                (self.data.Heat == self.current_heat), ['Time', 'Position']] =\
-                [heat_times, heat_positions]
+        if ((self.data['Race'] == self.current_race)).any(): 
+            self.data.loc[(self.data.Race== self.current_race) , 'Time'] = \
+                heat_times
+            self.data.loc[(self.data.Race== self.current_race) , 'Name'] = \
+                heat_names
+            self.data.loc[(self.data.Race== self.current_race) , 'Position'] = \
+                heat_positions
+            self.data.loc[(self.data.Race== self.current_race) , 'Swim'] = \
+                current_swim
             #else append slice 
         else:
             self.data = pd.concat([self.data, heat_df])
-        print(self.data)
+        self.data.to_html("meet.html")
     pass
 
     def print_names(self):
         for i, n in enumerate(self.times):
             print(i, n.get())
+    def change_page(self, direction):
+        if direction == "prev":
+            self.current_race = max(1, self.current_race - 1)
+        else:
+            self.current_race = self.current_race + 1
+        self.race_label.set(str(self.current_race))
 
     def load_images(self, master):
         mtc = PhotoImage(file="Images/small.gif")
