@@ -1,10 +1,10 @@
 #! /Users/carlosgonzalezoliver/anaconda/envs/py35/bin/python
 
 #### TODO ######################
+# - Clear textboxes when switching race
+# - Fill textboxes if already entered
 # - Load existing DataFrame
-# - Write results 
 # - Write DataFrame to file
-# - Toggle heats/events
 # - Standings
 # - Names autocomplete
 # - Check time input format, convert to datetime 
@@ -113,13 +113,30 @@ class Application:
             command=self.load_file)
         self.load_meet_button.grid(row=1, column=0)
 
-    def create_heat_results(self, master, row=2, col=7):
+    def create_heat_results(self, master, lanes=6, row=2, col=7):
         Label(master, text="Position").grid(row=row, column=col)
         Label(master, text="Points").grid(row=row, column=col+1)
-        
-    def create_rankings(self, master, row=2, col=10):
+
+        self.position_vars = []
+        self.points_vars = []
+
+        for i in range(lanes):
+            r = StringVar()
+            l = Label(textvar=r)
+            l.grid(row=row+2+i, column=col)
+            self.position_vars.append(r)
+
+            p = StringVar()
+            pl = Label(textvar=p)
+
+            pl.grid(row=row+2+i, column=col+1)
+
+            self.points_vars.append(p)
+
+    def create_rankings(self, master, lanes=6, row=2, col=10):
         Label(master, text="Standings").grid(row=row, \
             column=col)
+
     def load_file(self):
         fname = askopenfilename()
         print(fname)
@@ -133,6 +150,9 @@ class Application:
             positions[x] = int(i) + 1
         return positions
 
+    def compute_points(self, positions):
+        points = {1: 12, 2: 10, 3: 8, 4: 6, 5: 4, 6: 2}
+        return [points[r] for r in positions]
     def update_results(self):
     #append each swim in the DataFrame data
         heat_df = pd.DataFrame(columns=self.dfcolumns)
@@ -140,6 +160,7 @@ class Application:
         heat_positions = self.get_heat_positions(heat_times)
         heat_names = [n.get() for n in self.names]
         current_swim = [self.swim.get() for _ in range(len(self.names))]
+        points = self.compute_points(heat_positions)
 
         heat_df['Name'] = heat_names
         heat_df['Race'] = [self.current_race for _ in range(len(self.names))]
@@ -147,6 +168,7 @@ class Application:
         heat_df['Swim'] = current_swim
         heat_df['Time'] = heat_times
         heat_df['Position'] = heat_positions
+        heat_df['Points'] = points
 
         #if if current heat and event already in dataframe, update slice 
         if ((self.data['Race'] == self.current_race)).any(): 
@@ -158,9 +180,17 @@ class Application:
                 heat_positions
             self.data.loc[(self.data.Race== self.current_race) , 'Swim'] = \
                 current_swim
+            self.data.loc[(self.data.Race== self.current_race) , 'Points'] = \
+                points 
             #else append slice 
         else:
             self.data = pd.concat([self.data, heat_df])
+        #update rankings and points
+        for i in range(len(self.names)):
+            self.position_vars[i].set(heat_positions[i])
+            self.points_vars[i].set(points[i])
+
+        print(self.data)
         self.data.to_html("meet.html")
     pass
 
