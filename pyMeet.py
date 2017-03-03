@@ -27,8 +27,6 @@ class Application:
         self.swimmers = list() 
 
         #heat data
-        self.names = list()
-        self.times = list()
         self.current_event = 1
         self.current_heat = 1
         self.current_race = 1
@@ -75,6 +73,11 @@ class Application:
         """
             Create lane rows
         """
+        self.names = list()
+        self.names_text = list()
+
+        self.times = list()
+        self.times_text = list()
 
         self.lanes_label = Label(master, text="Lane")
         self.lanes_label.grid(row=row, column=1)
@@ -90,19 +93,31 @@ class Application:
             lane_label = Label(master, text=str(l))
             lane_label.grid(row=row+l+1, column=col)
             #name entry
-            en = Entry(master)
+            name_text = StringVar()
+
+            en = Entry(master, textvar=name_text)
+            name_text.set("")
             en.grid(row=row+l+1, column=col+1)
             self.names.append(en)
+            self.names_text.append(name_text)
+
             #time entry
-            t = Entry(master)
+            time_text = StringVar()
+            t = Entry(master, textvar=time_text)
+            time_text.set("")
             t.grid(row=row+l+1, column=col+2)
             self.times.append(t)
+            self.times_text.append(time_text)
 
 
     def create_update_button(self, master, row=10, col=4):
         self.update_button = Button(master, text="Update",\
             command=self.update_results)
         self.update_button.grid(row=row, column=col)
+        self.update_status = StringVar()
+        self.update_status.set(" ")
+        Label(master, textvar=self.update_status).grid(row=row, column=col+1)
+
 
     def create_load_buttons(self, master):
         self.load_swimmers_button = Button(master, text="Load Swimmers",\
@@ -133,6 +148,27 @@ class Application:
 
             self.points_vars.append(p)
 
+    def update_text(self):
+        """
+            Fill values in text boxes for current race
+        """
+        print(self.data)
+        self.update_status.set(" ")
+        race_info = self.data.loc[self.data['Race'] == self.current_race]
+
+        print(race_info)
+        if not race_info.empty:
+            for i, (name, time) in enumerate(zip(race_info['Name'],\
+                race_info['Time'])):
+
+                self.names_text[i].set(name)
+                self.times_text[i].set(time)
+        else:
+                for i in range(len(self.names_text)):
+                    self.names_text[i].set(" ")
+                    self.times_text[i].set(" ")
+
+        pass
     def create_rankings(self, master, lanes=6, row=2, col=10):
         Label(master, text="Standings").grid(row=row, \
             column=col)
@@ -163,7 +199,7 @@ class Application:
         points = self.compute_points(heat_positions)
 
         heat_df['Name'] = heat_names
-        heat_df['Race'] = [self.current_race for _ in range(len(self.names))]
+        heat_df['Race'] = [int(self.current_race) for _ in range(len(self.names))]
         heat_df['Lane'] = [i+1 for i in range(len(heat_times))]
         heat_df['Swim'] = current_swim
         heat_df['Time'] = heat_times
@@ -190,7 +226,7 @@ class Application:
             self.position_vars[i].set(heat_positions[i])
             self.points_vars[i].set(points[i])
 
-        print(self.data)
+        self.update_status.set("Info updated!")
         self.data.to_html("meet.html")
     pass
 
@@ -199,10 +235,11 @@ class Application:
             print(i, n.get())
     def change_page(self, direction):
         if direction == "prev":
-            self.current_race = max(1, self.current_race - 1)
+            self.current_race = int(max(1, self.current_race - 1))
         else:
-            self.current_race = self.current_race + 1
+            self.current_race = int(self.current_race + 1)
         self.race_label.set(str(self.current_race))
+        self.update_text()
 
     def load_images(self, master):
         mtc = PhotoImage(file="Images/small.gif")
