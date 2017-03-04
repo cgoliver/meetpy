@@ -4,13 +4,13 @@
 # - Load existing DataFrame
 # - Write DataFrame to file
 # - Standings
-# - Names autocomplete
 # - Check time input format, convert to datetime 
 #################################
 
 from tkinter import *
 from tkinter.filedialog import askopenfilename
 import pandas as pd
+import AutocompleteEntry
 
 class Application:
     def __init__(self, master):
@@ -22,7 +22,7 @@ class Application:
         self.dfcolumns = ['Name', 'Race', 'Swim', 'Lane', 'Time', \
             'Position', 'Points']
         self.data = pd.DataFrame(columns=self.dfcolumns)
-        self.swimmers = list() 
+        self.swimmers = ["nick", "bob", "brian"]
 
         #heat data
         self.current_event = 1
@@ -38,7 +38,7 @@ class Application:
         self.create_load_buttons(master)
         self.create_heat_results(master)
         self.create_rankings(master)
-
+        self.create_swimmer_enter_button(master)
 
     def create_navigation(self,master, row=1, col=1):
         self.prev_button = Button(master, text="<", command=lambda :\
@@ -93,7 +93,9 @@ class Application:
             #name entry
             name_text = StringVar()
 
-            en = Entry(master, textvar=name_text)
+            # en = Entry(master, textvar=name_text)
+            en = AutocompleteEntry.AutocompleteEntry(master, textvar=name_text)
+            en.set_completion_list(self.swimmers)
             name_text.set("")
             en.grid(row=row+l+1, column=col+1)
             self.names.append(en)
@@ -117,6 +119,21 @@ class Application:
         Label(master, textvar=self.update_status).grid(row=row, column=col+1)
 
 
+    def swimmer_entry_window(self, master):
+        w = Toplevel()
+        w.title("Swimmer Entry")
+
+        Label(w, text="Name").grid(row=0, column=0)
+        Entry(w).grid(row=1, column=0)
+
+        Label(w, text="Club").grid(row=0, column=1)
+        Entry(w).grid(row=1, column=1)
+        pass
+
+    def create_swimmer_enter_button(self, master, row=10, col=5):
+        Button(master, text="Enter swimmer", \
+            command=lambda : self.swimmer_entry_window(master)).grid(row=row,\
+                column=col)
     def create_load_buttons(self, master):
         self.load_swimmers_button = Button(master, text="Load Swimmers",\
             command=self.load_file)
@@ -150,11 +167,9 @@ class Application:
         """
             Fill values in text boxes for current race
         """
-        print(self.data)
         self.update_status.set(" ")
         race_info = self.data.loc[self.data['Race'] == self.current_race]
 
-        print(race_info)
         if not race_info.empty:
             for i, (name, time) in enumerate(zip(race_info['Name'],\
                 race_info['Time'])):
