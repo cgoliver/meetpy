@@ -1,9 +1,12 @@
 #! /Users/carlosgonzalezoliver/anaconda/envs/py35/bin/python
 
 #### TODO ######################
-# - Load existing DataFrame
-# - Write DataFrame to file
 # - Standings
+# - Names database
+# - Load names
+# - Handle name not in database
+# - Close window button
+# - Handle message when no file chosen
 # - Check time input format, convert to datetime 
 #################################
 
@@ -30,7 +33,7 @@ class Application:
         self.current_race = 1
 
         #generate display
-        master.title("meetpy")
+        master.title("meetpy -- by cgoliver")
         # self.load_images(master)
         self.create_navigation(master, row=1)
         self.create_lanes(master)
@@ -62,7 +65,7 @@ class Application:
 
         ## EVENT TYPE DROPDOWN
         self.swim = StringVar(master)
-        self.swim.set("100 IM")
+        self.swim.set("Race type")
         self.swim_type = OptionMenu(master,self.swim, "50 FR", "100 FR",\
             "100 IM", "4x50 FR", "4x50 IM")
         self.swim_type.grid(row=1, column=col+3)
@@ -126,17 +129,19 @@ class Application:
         Label(w, text="Name").grid(row=0, column=0)
         Entry(w).grid(row=1, column=0)
 
+        club = StringVar(master)
+        club.set("Choose club")
         Label(w, text="Club").grid(row=0, column=1)
-        Entry(w).grid(row=1, column=1)
+        OptionMenu(w, club, "MTC", "MUMS").grid(row=1, column=1)
         pass
 
-    def create_swimmer_enter_button(self, master, row=10, col=5):
+    def create_swimmer_enter_button(self, master, row=10, col=1):
         Button(master, text="Enter swimmer", \
             command=lambda : self.swimmer_entry_window(master)).grid(row=row,\
                 column=col)
     def create_load_buttons(self, master):
         self.load_swimmers_button = Button(master, text="Load Swimmers",\
-            command=self.load_file)
+            command=lambda : self.load_file(master))
         self.load_swimmers_button.grid(row=0, column=0)
 
         self.load_meet_button = Button(master, text="Load Meet", \
@@ -186,8 +191,17 @@ class Application:
         Label(master, text="Standings").grid(row=row, \
             column=col)
 
-    def load_file(self):
+    def message_window(self, master, message):
+        w = Toplevel()
+        Label(w, text=message).pack()
+
+    def load_file(self, master):
         fname = askopenfilename()
+        try:
+            self.data = pd.DataFrame.from_csv(fname)
+        except:
+            self.message_window(master, "Invalid file. Try again.") 
+
         print(fname)
 
     def get_heat_positions(self, times):
@@ -240,7 +254,7 @@ class Application:
             self.points_vars[i].set(points[i])
 
         self.update_status.set("Info updated!")
-        self.data.to_html("meet.html")
+        self.data.to_csv("meet_backup.csv")
     pass
 
     def print_names(self):
@@ -258,6 +272,9 @@ class Application:
         mtc = PhotoImage(file="Images/small.gif")
         mtc_logo = Label(master, image=mtc)
         mtc_logo.pack(side="right")
+
+    def quit(self, root):
+        root.destroy()
 
 if __name__ == "__main__":
     root = Tk()
