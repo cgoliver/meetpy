@@ -1,8 +1,6 @@
 #! /Users/carlosgonzalezoliver/anaconda/envs/py35/bin/python
 
 #### TODO ######################
-# - Clear textboxes when switching race
-# - Fill textboxes if already entered
 # - Load existing DataFrame
 # - Write DataFrame to file
 # - Standings
