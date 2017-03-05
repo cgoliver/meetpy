@@ -25,7 +25,7 @@ class Application:
         self.dfcolumns = ['Name', 'Race', 'Swim', 'Lane', 'Time', \
             'Position', 'Points']
         self.data = pd.DataFrame(columns=self.dfcolumns)
-        self.swimmers = list()
+        self.swimmers = dict()
 
         #heat data
         self.current_event = 1
@@ -42,6 +42,7 @@ class Application:
         self.create_heat_results(master)
         self.create_rankings(master)
         self.create_swimmer_enter_button(master)
+        self.create_export_buttons(master)
 
     def create_navigation(self,master, row=1, col=1):
         self.prev_button = Button(master, text="<", command=lambda :\
@@ -98,7 +99,7 @@ class Application:
             name_text = StringVar()
 
             en = AutocompleteEntry.AutocompleteEntry(master, textvar=name_text)
-            en.set_completion_list([s[0] for s in self.swimmers])
+            en.set_completion_list(self.swimmers.keys())
             name_text.set("")
             en.grid(row=row+l+1, column=col+1)
             self.names.append(en)
@@ -123,6 +124,15 @@ class Application:
         Label(master, textvar=self.update_status).grid(row=row, column=col+1)
 
 
+    def create_export_buttons(self, master, row=8, col=0):
+        Button(master, text="Export meet", command=\
+            lambda : self.file_save('meet')).grid(row=row, column=col)
+        Button(master, text="Export swimmers", command=\
+            lambda : self.file_save('swimmers')).grid(row=row+1, column=col)
+
+        pass
+    def file_save(self, master):
+        pass
     def swimmer_entry_window(self, master):
         w = Toplevel()
         w.title("Swimmer Entry")
@@ -141,9 +151,9 @@ class Application:
         pass
 
     def append_swimmer(self, swimmer, club):
-        self.swimmers.append((swimmer, club))
+        self.swimmers.setdefault(swimmer, club)
         for n in self.name_entry:
-            n.set_completion_list([n[0] for n in self.swimmers])
+            n.set_completion_list(self.swimmers.keys())
         print(self.swimmers)
         pass
 
