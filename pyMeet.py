@@ -25,7 +25,7 @@ class Application:
         self.dfcolumns = ['Name', 'Race', 'Swim', 'Lane', 'Time', \
             'Position', 'Points']
         self.data = pd.DataFrame(columns=self.dfcolumns)
-        self.swimmers = ["nick", "bob", "brian"]
+        self.swimmers = list()
 
         #heat data
         self.current_event = 1
@@ -89,6 +89,7 @@ class Application:
         self.times_label = Label(master, text="Time (min:sec:ms)")
         self.times_label.grid(row=row, column=col+2)
 
+        self.name_entry = list()
         for l in range(1, lanes+1):
             #lane labels
             lane_label = Label(master, text=str(l))
@@ -96,13 +97,13 @@ class Application:
             #name entry
             name_text = StringVar()
 
-            # en = Entry(master, textvar=name_text)
             en = AutocompleteEntry.AutocompleteEntry(master, textvar=name_text)
-            en.set_completion_list(self.swimmers)
+            en.set_completion_list([s[0] for s in self.swimmers])
             name_text.set("")
             en.grid(row=row+l+1, column=col+1)
             self.names.append(en)
             self.names_text.append(name_text)
+            self.name_entry.append(en)
 
             #time entry
             time_text = StringVar()
@@ -127,12 +128,23 @@ class Application:
         w.title("Swimmer Entry")
 
         Label(w, text="Name").grid(row=0, column=0)
-        Entry(w).grid(row=1, column=0)
+        s = Entry(w)
+        s.grid(row=1, column=0)
 
         club = StringVar(master)
         club.set("Choose club")
         Label(w, text="Club").grid(row=0, column=1)
         OptionMenu(w, club, "MTC", "MUMS").grid(row=1, column=1)
+
+        Button(w, text="Enter", command=lambda : \
+            self.append_swimmer(s.get(), club.get())).grid(row=1, column=2)
+        pass
+
+    def append_swimmer(self, swimmer, club):
+        self.swimmers.append((swimmer, club))
+        for n in self.name_entry:
+            n.set_completion_list([n[0] for n in self.swimmers])
+        print(self.swimmers)
         pass
 
     def create_swimmer_enter_button(self, master, row=10, col=1):
